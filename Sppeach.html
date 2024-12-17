@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Voice Input for Asset Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            text-align: center;
+            background-color: #f4f7f6;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        #result {
+            margin-top: 30px;
+            font-size: 20px;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 10px;
+            display: inline-block;
+            width: 80%;
+            min-height: 80px;
+            max-height: 200px;
+            overflow-y: auto;
+            word-wrap: break-word;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            font-size: 16px;
+        }
+        .extracted-info {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Voice Input for Asset Management</h1>
+    <p>Click the button and speak something like: "Samsung TV, 75 inches".</p>
+    
+    <button id="startBtn">Start Voice Input</button>
+    <div id="result">Your speech will appear here...</div>
+
+    <script>
+        // Check if the browser supports the Web Speech API
+        if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+            alert("Your browser does not support Speech Recognition. Please use Google Chrome.");
+        }
+
+        // Initialize SpeechRecognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+
+        // Set recognition properties
+        recognition.lang = 'en-US';
+        recognition.interimResults = true;  // Allow interim results for real-time feedback
+        recognition.maxAlternatives = 1;
+
+        // Elements
+        const startBtn = document.getElementById('startBtn');
+        const resultDiv = document.getElementById('result');
+
+        // Start the voice input
+        startBtn.addEventListener('click', function() {
+            recognition.start(); // Start the speech recognition process
+            startBtn.disabled = true; // Disable button while listening
+            resultDiv.textContent = "Listening... Please speak now...";
+            resultDiv.classList.remove('error');
+        });
+
+        // When speech is recognized
+        recognition.onresult = function(event) {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+
+            resultDiv.textContent = `You said: "${transcript}"`;
+
+            // Example of extracting asset information (e.g., "Samsung TV, 75 inches")
+            const assetMatch = transcript.match(/([\w\s]+)\s*,\s*(\d+)\s*inches/);
+            if (assetMatch) {
+                const assetName = assetMatch[1];
+                const assetSize = assetMatch[2];
+                resultDiv.innerHTML += `
+                    <div class="extracted-info">
+                        <p>Extracted Asset:</p>
+                        <p>Asset Name: <strong>${assetName}</strong></p>
+                        <p>Size: <strong>${assetSize} inches</strong></p>
+                    </div>`;
+            } else {
+                resultDiv.innerHTML += `
+                    <p class="error">No asset information detected. Try again!</p>`;
+            }
+        };
+
+        // Handle errors
+        recognition.onerror = function(event) {
+            resultDiv.textContent = `Error occurred: ${event.error}`;
+            resultDiv.classList.add('error');
+            startBtn.disabled = false; // Re-enable the button
+        };
+
+        // Stop listening when recognition ends
+        recognition.onend = function() {
+            startBtn.disabled = false; // Re-enable the button
+            resultDiv.innerHTML += `<p>Speech recognition ended.</p>`;
+        };
+    </script>
+</body>
+</html>
